@@ -5,3 +5,4 @@ C:\DEV\amibroker\SornetteBridge\SornetteBridge\bin\Debug\MWArray.dll
 C:\DEV\amibroker\SornetteBridge\SornetteBridge\bin\Debug\MWArray.xml
 C:\DEV\amibroker\SornetteBridge\SornetteBridge\obj\Debug\SornetteBridge.dll
 C:\DEV\amibroker\SornetteBridge\SornetteBridge\obj\Debug\SornetteBridge.pdb
+C:\DEV\amibroker\SornetteBridge\SornetteBridge\obj\Debug\SornetteBridge.csprojResolveAssemblyReference.cache
