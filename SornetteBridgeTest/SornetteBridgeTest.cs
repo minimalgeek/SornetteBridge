@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sornette;
+using Bridge;
 
-namespace SornetteTest
+namespace BridgeTest
 {
     [TestClass]
     public class SornetteBridgeTest

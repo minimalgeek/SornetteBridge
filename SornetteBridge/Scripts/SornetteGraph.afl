@@ -1,0 +1,145 @@
+_SECTION_BEGIN("Price");
+SetChartOptions(0,chartShowArrows|chartShowDates);
+_N(Title = StrFormat("{{NAME}} - {{INTERVAL}} {{DATE}} Open %g, Hi %g, Lo %g, Close %g (%.1f%%) Vol " +WriteVal( V, 1.0 ) +" {{VALUES}}", O, H, L, C, SelectedValue( ROC( C, 1 )) ));
+Plot( C, "Close", ParamColor("Color", colorBlack ), styleNoTitle | ParamStyle("Style") | GetPriceStyle() ); 
+//if( ParamToggle("Tooltip shows", "All Values|Only Prices" ) )
+//{
+// ToolTip=StrFormat("Open: %g\nHigh:  %g\nLow:   %g\nClose:  %g (%.1f%%)\nVolume: "+NumToStr( V, 1 ), O, H, L, C, SelectedValue( ROC( C, 1 )));
+//}
+_SECTION_END();
+
+_SECTION_BEGIN("Sornette's Estimation");
+
+#include<ContToDate.afl>
+
+// Idõ- és árvektor
+t = Year() + (DayOfYear() + Hour()/24 + Minute()/1440) / (365 + (Year()%4 == 0 AND Year()%100 != 0)); // Szökõév + intraday figyelembe véve
+
+pt = C; // Záróár
+
+// Paraméterek
+fm_par  = ParamToggle("Future Mode", "Off|On");
+in_be   = ParamToggle("Begin+End Mode", "Off|On");
+in_sel  = ParamList("Select Mode", "IS Start|IS End|Off", defaultval = 0);
+in_tt   = Param("Insample (Periods)", 100, 10, 600, 10);
+out_tt  = Param("Outsample (Periods)", 50, 5, 200, 5);
+beta_lo = Param("Beta Minimum", 0.15, 0.01, 0.20, 0.01);
+beta_hi = Param("Beta Maximum", 0.85, 0.80, 0.99, 0.01);
+anti    = (ParamToggle("Estimation Type", "Anti-Bubble|Bubble", defaultval =1 )-0.5)*2;
+grd     = Param("Grid Density", 3, 1, 12, 1);
+col_fit = ParamColor( "Graph Color", colorGold );
+col_bnd = ParamColor( "Bounds Color", colorGold );
+fm_cfit = ParamColor( "FM Graph Color", colorBlueGrey);
+fm_cbnd = ParamColor( "FM Bounds Color", colorBlueGrey);
+in_col  = ParamColor( "Insample Marker Color", colorRed);
+out_col = ParamColor( "Outsample Marker Color", colorGreen);
+
+// Insample megadási mód szerinti bontás
+if (in_be == 1 AND BeginValue(BarIndex()) != 0 AND EndValue(BarIndex()) != LastValue(BarIndex())) // Lehet Begin+EndValue-t használni
+{
+  // Maszk-idõsor készítése
+  mask   = 0; mask[EndValue(BarIndex())]=1;
+  in_tt  = EndValue(BarIndex()) - BeginValue(BarIndex());
+
+  // Insample és outsample markerek
+  in_mrk = BarIndex() == BeginValue(BarIndex()) OR BarIndex() == EndValue(BarIndex());
+  out_mrk = IIf(anti==1, /* +1 */ BarIndex() ==   EndValue(BarIndex())+1 OR BarIndex() ==   EndValue(BarIndex()) + out_tt,
+                         /* -1 */ BarIndex() == BeginValue(BarIndex())-1 OR BarIndex() == BeginValue(BarIndex()) - out_tt);
+
+  // Rolling window Sornette alkalmazás
+  outflag = SorRoll(t, pt, mask, in_tt, out_tt, beta_lo, beta_hi, anti, grd);
+
+  // Eredmények
+  a0     =   a0[EndValue(BarIndex())]; b0     =    b0[EndValue(BarIndex())];     c0     = c0[EndValue(BarIndex())];
+  tc0    =  tc0[EndValue(BarIndex())]; beta0  = beta0[EndValue(BarIndex())]; omega0 = omega0[EndValue(BarIndex())];
+  phi0   = phi0[EndValue(BarIndex())]; ssr0   =  ssr0[EndValue(BarIndex())];    se0    = se0[EndValue(BarIndex())];
+  rsq0   = rsq0[EndValue(BarIndex())]; type0  = type0[EndValue(BarIndex())];
+
+  // Mutatók
+  ishighs0 = omega0/(2*3.1415926)*anti*log((tc0-t[BeginValue(BarIndex())])/(tc0-t[EndValue(BarIndex())]));
+}
+else // Direkt vagy SelectedValue paramétermegadás 
+{
+  if (in_sel == "IS End" AND SelectedValue(BarIndex())!=LastValue(BarIndex())) // Select IS End paramétermegadás
+  {
+    // Maszk-idõsor készítése
+    mask   = 0; mask[SelectedValue(BarIndex())]=1;
+
+    // Insample és outsample markerek
+    in_mrk = BarIndex() == SelectedValue(BarIndex()) OR BarIndex() == SelectedValue(BarIndex()) - in_tt;
+    out_mrk = IIf(anti==1, /* +1 */ BarIndex() == SelectedValue(BarIndex())+1 OR BarIndex() == SelectedValue(BarIndex()) + out_tt,
+                           /* -1 */ BarIndex() == SelectedValue(BarIndex())- in_tt - 1 OR BarIndex() == SelectedValue(BarIndex()) - in_tt - out_tt);
+
+    // Rolling window Sornette alkalmazás
+    outflag = SorRoll(t, pt, mask, in_tt, out_tt, beta_lo, beta_hi, anti, grd);
+
+    // Eredmények
+    a0     =   a0[SelectedValue(BarIndex())]; b0     =    b0[SelectedValue(BarIndex())];     c0     = c0[SelectedValue(BarIndex())];
+    tc0    =  tc0[SelectedValue(BarIndex())]; beta0  = beta0[SelectedValue(BarIndex())]; omega0 = omega0[SelectedValue(BarIndex())];
+    phi0   = phi0[SelectedValue(BarIndex())]; ssr0   =  ssr0[SelectedValue(BarIndex())];    se0    = se0[SelectedValue(BarIndex())];
+    rsq0   = rsq0[SelectedValue(BarIndex())]; type0  = type0[SelectedValue(BarIndex())];
+
+    // Mutatók
+    ishighs0 = omega0/(2*3.1415926)*anti*log((tc0-t[SelectedValue(BarIndex())-in_tt])/(tc0-t[SelectedValue(BarIndex())]));
+
+  }
+  else // Select IS Start vagy Par Only
+  {
+
+    if (in_sel != "Off" AND SelectedValue(BarIndex())!=LastValue(BarIndex())) // Select IS Start, ekkor in_tt ez alapján
+      in_tt = BarCount +1 - SelectedValue(Cum(1));
+  
+    // Insample és outsample markerek
+    in_mrk = BarIndex() == BarCount - in_tt OR BarIndex() == BarCount-1;
+    out_mrk = IIf(anti==1, /* +1 */ 0, // buboréknál nem látjuk az outsamplet
+                           /* -1 */ BarIndex() == BarCount - in_tt - 1 OR BarIndex() == BarCount - in_tt - out_tt);
+
+    // Egyszerû Sornette alkalmazás direkt vagy SelectedValue paramétermegadásnál
+    pv_full_inds = SorNow(t, pt, in_tt, out_tt, beta_lo, beta_hi, anti, grd);
+
+    // Eredmények kicsomagolása
+    a0     = pv_full_inds[0]; b0     = pv_full_inds[1]; c0     = pv_full_inds[2]; tc0    = pv_full_inds[3];
+    beta0  = pv_full_inds[4]; omega0 = pv_full_inds[5]; phi0   = pv_full_inds[6]; ssr0   = pv_full_inds[7]; 
+    se0    = pv_full_inds[8]; rsq0   = pv_full_inds[9]; type0  = pv_full_inds[10];
+
+    // Mutatók
+    ishighs0 = omega0/(2*3.1415926)*anti*log((tc0-t[BarCount-1-in_tt])/(tc0-t[BarCount-1]));
+
+  }
+}
+
+// Insample és outsample markerek
+PlotShapes(IIf(in_mrk,  shapeSmallUpTriangle,   shapeNone), in_col , layer = 0, yposition = Graph0, offset = -36);
+PlotShapes(IIf(out_mrk, shapeSmallDownTriangle, shapeNone), out_col, layer = 0, yposition = Graph0, offset = -36);
+
+// Visszaszámolás
+ft = a0 + b0*(anti*(tc0-t))^beta0 + c0*cos(omega0*ln(anti*(tc0-t)) + phi0);
+
+// Plot, 99%-os konfidenciasávokkal
+_N(Title = StrFormat("{{NAME}}   A = %g   B = %g   C = %g   Tc = " + WriteVal(ContToDate(tc0), formatDateTime) + "   Beta = %g   Omega = %g   Phi = %g   R-sq = %g   Type = %g   IS Highs = %g {{VALUES}}", a0, b0, c0, beta0, omega0, phi0, rsq0, type0, ishighs0));
+
+Plot(ft, "Sornette's Fit", col_fit, styleNoTitle); 
+Plot(ft+3*se0, "Upper 99% Bound", col_bnd, styleNoTitle | styleDashed); 
+Plot(ft-3*se0, "Lower 99% Bound", col_bnd, styleNoTitle | styleDashed); 
+
+// Future Mode
+if (fm_par AND (tc0 > LastValue(t) OR anti == -1)) // Csak ha tc nem látszik vagy ha anti-buborékot keresünk (ekkor tc mindig látszani fog...)
+{
+  // Épp egy évvel toljuk vissza az egészet
+  fm_bar = ( abs(LastValue(t)-1 - t)) == Lowest( abs(LastValue(t)-1 - t)); // Ez pont egy évvel ezelõttig 1
+  fm_offset = BarCount - 1 - LastValue(Cum(fm_bar)); // Ennyit kell eltolni
+  fm_pt = IIf(BarIndex() < BarCount - fm_offset ,Ref(pt, fm_offset), Null);
+  fm_op = IIf(BarIndex() < BarCount - fm_offset ,Ref(O, fm_offset), Null);
+  fm_hi = IIf(BarIndex() < BarCount - fm_offset ,Ref(H, fm_offset), Null);
+  fm_lo = IIf(BarIndex() < BarCount - fm_offset ,Ref(L, fm_offset), Null);
+  fm_t  = t + 1;
+  fm_ft = a0 + b0*(anti*(tc0-fm_t))^beta0 + c0*cos(omega0*ln(anti*(tc0-fm_t)) + phi0);
+  
+  PlotOHLC(fm_op, fm_hi, fm_lo, fm_pt, "", colorLightGrey, styleNoTitle | styleCandle);
+  // Plot(fm_pt, "Price (FM)", colorLightGrey, styleNoTitle); // Ha nem akarunk FM OHLC plotot
+  Plot(fm_ft, "FM Sornette's Fit", fm_cfit, styleNoTitle);
+  Plot(fm_ft+3*se0, "FM Upper 99% Bound", fm_cbnd, styleNoTitle | styleDashed);
+  Plot(fm_ft-3*se0, "FM Lower 99% Bound", fm_cbnd, styleNoTitle | styleDashed);
+}
+
+_SECTION_END();

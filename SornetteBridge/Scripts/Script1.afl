@@ -1,5 +1,0 @@
-// call the plugin
-aPlugInResult = SornetteBridgeFunc1(Close, 5);
-
-// plot plugin's result
-Plot(aPlugInResult, "aPlugInResult", colorRed);

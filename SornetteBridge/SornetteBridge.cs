@@ -2,10 +2,10 @@
 using AmiBroker;
 using AmiBroker.PlugIn;
 using AmiBroker.Utils;
-using LibSornette;
 using MathWorks.MATLAB.NET.Arrays;
+using LibSornette;
 
-namespace Sornette
+namespace Bridge
 {
     public class SornetteBridge : IndicatorBase
     {

@@ -68,21 +68,20 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>
-@ECHO ***** Updating AmiBroker folders *****
+    <PostBuildEvent>@ECHO ***** Updating AmiBroker folders *****
 IF "%25DotNetForAB_Home%25" EQU "" IF "%25DotNetForABx64_Home%25" EQU "" (ECHO "ERROR: Cannot deploy project output to AmiBroker folders. Missing environment variables." &amp; ECHO . &amp; EXIT -1)
 
 IF "%25DotNetForAB_Home%25" NEQ "" IF "$(Platform)" NEQ "x64" (
 ECHO ***** Deploying project output to "%25DotNetForAB_Home%25" and "%25DotNetForAB_Formulas%25".
-xcopy /Y /I "$(TargetDir)$(TargetName).*" "%25DotNetForAB_Home%25\.NET for AmiBroker\Assemblies"
-xcopy /Y /I /S "$(ProjectDir)Scripts\*.afl" "%25DotNetForAB_Formulas%25\.NET for AmiBroker\$(ProjectName)"
+C:\windows\system32\xcopy /Y /I "$(TargetDir)$(TargetName).*" "%25DotNetForAB_Home%25\.NET for AmiBroker\Assemblies"
+C:\windows\system32\xcopy /Y /I /S "$(ProjectDir)Scripts\*.afl" "%25DotNetForAB_Formulas%25\.NET for AmiBroker\$(ProjectName)"
 )
 
 IF "%25DotNetForABx64_Home%25" NEQ "" IF "$(Platform)" NEQ "x86" (
 ECHO ***** Deploying project output to "%25DotNetForABx64_Home%25" and "%25DotNetForABx64_Formulas%25".
-xcopy /Y /I "$(TargetDir)$(TargetName).*" "%25DotNetForABx64_Home%25\.NET for AmiBroker\Assemblies"
-xcopy /Y /I /S "$(ProjectDir)Scripts\*.afl" "%25DotNetForABx64_Formulas%25\.NET for AmiBroker\$(ProjectName)"
+C:\windows\system32\xcopy /Y /I "$(TargetDir)$(TargetName).*" "%25DotNetForABx64_Home%25\.NET for AmiBroker\Assemblies"
+C:\windows\system32\xcopy /Y /I /S "$(ProjectDir)Scripts\*.afl" "%25DotNetForABx64_Formulas%25\.NET for AmiBroker\$(ProjectName)"
 )
-    </PostBuildEvent>
+</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -1,0 +1,13 @@
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\obj\Debug\SornetteBridgeTest.csprojResolveAssemblyReference.cache
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\SornetteBridgeTest.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\SornetteBridgeTest.pdb
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\AmiBroker.PlugInHost.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\AmiBroker.Utils.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\SornetteBridge.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\LibSornette.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\MWArray.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\SornetteBridge.pdb
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\bin\Debug\MWArray.xml
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\obj\Debug\SornetteBridgeTest.dll
+C:\DEV\amibroker\SornetteBridge\SornetteBridgeTest\obj\Debug\SornetteBridgeTest.pdb
