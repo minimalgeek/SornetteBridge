@@ -1,0 +1,39 @@
+#include<ContToDateA.afl>
+
+// Becslési maszk
+mask = BarIndex()+10 > BarCount;
+
+Filter = 1;
+
+// Idõ- és árvektor
+t = Year() + (DayOfYear() + Hour()/24 + Minute()/1440) / (365 + (Year()%4 == 0 AND Year()%100 != 0)); // Szökõév + intraday figyelembe véve
+pt = C; // Záróár
+
+// Paraméterek
+in_tt   = Param("Insample Length (Periods)", 100, 10, 600, 5);
+out_tt  = Param("Outsample Length (Periods)", 100, 10, 300, 5);
+beta_lo = Param("Beta Minimum", 0.15, 0.01, 0.20, 0.01);
+beta_hi = Param("Beta Maximum", 0.85, 0.80, 0.99, 0.01);
+anti    = (ParamToggle("Estimation Type", "Anti-Bubble|Bubble", defaultval =1 )-0.5)*2;
+grd     = Param("Grid Density", 5, 1, 12, 1);
+
+// Eredményváltozók inicializálása
+a0 = Null; b0 = Null; c0 = Null; tc0 = Null; beta0 = Null; omega0 = Null; phi0 = Null; ssr0 = Null; se0 = Null; rsq0 = Null; type0 = Null;
+  
+// Sornette számolás és eredmények
+outflag = SorRoll(t, pt, mask, in_tt, out_tt, beta_lo, beta_hi, anti, grd);
+  
+// Output
+AddColumn(mask, "Mask", 1.0);
+
+AddColumn(a0, "A");
+AddColumn(b0, "B");
+AddColumn(c0, "C");
+AddColumn(IIf(mask,ContToDateA(tc0),Null), "Tc", formatDateTime , colorDefault, IIf(type0 == 2, colorRose, colorDefault));
+AddColumn(beta0, "Beta", 1.3, colorDefault, IIf(beta0>beta_lo AND beta0<beta_hi, colorDefault, colorRose));
+AddColumn(omega0, "Omega", 1.3, colorDefault, IIf(omega0>5 AND omega0<15, colorDefault, colorRose));
+AddColumn(phi0, "Phi", 1.3);
+AddColumn(ssr0, "SSR");
+AddColumn(se0, "S.E.");
+AddColumn(rsq0, "R-sq", 1.3, colorDefault, IIf(rsq0 <= 0.900, colorRose, IIf(rsq0 >= 0.950, colorPaleGreen, colorDefault)));
+AddColumn(type0, "Type", 1.0, colorDefault, IIf( type0==2, colorRose, IIf(type0==1, colorDefault, colorPaleGreen)));

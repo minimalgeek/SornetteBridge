@@ -1,0 +1,60 @@
+#include<ContToDate.afl>
+
+// Szûrési feltétel
+Condition =      C > 10
+             AND BarCount > 50 
+             AND ATR(20)*2 > Ref(ATR(200),-20)
+             AND C > MA(C,100)
+             AND MA(C,50) > MA(C,100)
+             AND MA(C,100) > MA(C,200)
+             AND MA(C,100) > Ref(MA(C,100),-1) 
+             AND NOT (StrRight(Name(),2) == "OB")
+             AND (MA(C,50)*MA(V,50) > 60000);
+
+Filter = Condition;
+
+// Idõ- és árvektor
+t = Year() + DayOfYear() / (365 + (Year()%4 == 0 AND Year()%100 != 0)); // Szökõév figyelembe véve
+pt = C; // Záróár
+
+// Paraméterek
+in_tt   = Param("Insample Length (Periods)", 100, 10, 600, 5);
+out_tt  = Param("Outsample Length (Periods)", 50, 5, 200, 5);
+beta_lo = Param("Beta Minimum", 0.15, 0.01, 0.20, 0.01);
+beta_hi = Param("Beta Maximum", 0.85, 0.80, 0.99, 0.01);
+anti    = (ParamToggle("Estimation Type", "Anti-Bubble|Bubble", defaultval =1 )-0.5)*2;
+grd     = Param("Grid Density", 5, 1, 12, 1);
+  
+// Sornette számolás és eredmények
+if(LastValue(Condition) == 1)
+  {
+  pv_full_inds = SorNow(t, pt, in_tt, out_tt, beta_lo, beta_hi, anti, grd);
+
+  a0     = pv_full_inds[0];  b0     = pv_full_inds[1];  c0     = pv_full_inds[2];
+  tc0    = pv_full_inds[3];  beta0  = pv_full_inds[4];  omega0 = pv_full_inds[5];  phi0   = pv_full_inds[6];
+  ssr0   = pv_full_inds[7];  se0    = pv_full_inds[8];  rsq0   = pv_full_inds[9];  type0  = pv_full_inds[10];
+
+  tc0_date = ContToDate(tc0);
+  }
+else
+  {
+  a0     = Null;  b0     = Null;  c0     = Null;
+  tc0    = Null;  beta0  = Null;  omega0 = Null;  phi0   = Null;
+  ssr0   = Null;  se0    = Null;  rsq0   = Null;  type0  = Null;
+
+  tc0_date = Null;
+  }
+  
+// Output
+AddColumn(a0, "A");
+AddColumn(b0, "B");
+AddColumn(c0, "C");
+AddColumn(tc0_date, "Tc", formatDateTime , colorDefault, IIf(type0 == 2, colorRose, colorDefault));
+AddColumn(beta0, "Beta", 1.3, colorDefault, IIf(beta0>beta_lo AND beta0<beta_hi, colorDefault, colorRose));
+AddColumn(omega0, "Omega", 1.3, colorDefault, IIf(omega0>5 AND omega0<15, colorDefault, colorRose));
+AddColumn(phi0, "Phi", 1.3);
+AddColumn(ssr0, "SSR");
+AddColumn(se0, "S.E.");
+AddColumn(rsq0, "R-sq", 1.3, colorDefault, IIf(rsq0 <= 0.900, colorRose, IIf(rsq0 >= 0.950, colorPaleGreen, colorDefault)));
+AddColumn(type0, "Type", 1.0, colorDefault, IIf( type0==2, colorRose, IIf(type0==1, colorDefault, colorPaleGreen)));
+AddColumn(omega0/(2*acos(-1))*anti*log((tc0-t[BarCount-1-in_tt])/(tc0-t[BarCount-1])), "IS Highs");
